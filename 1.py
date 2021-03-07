@@ -1,17 +1,34 @@
 from os import error
+import os
 import subprocess
 from django.conf import settings
 from pathlib import Path
 import re
 import logging
 import hashlib
+BASE_DIR = Path(__file__).resolve().parent
+
 
 class Process:
 
     def __init__(self) -> None:
-        self.aapt_path = 'F:\\Android\Sdk\\build-tools\\30.0.3\\aapt.exe'
-        self.apktool_path = 'F:\\AndroidDevelopTool\\apktool_2.5.0.jar'
-        self.apk_path = "E:\\JoJo-Test\\mysite\\data\\apk\\Read.apk"
+        self.aapt_path = str(Path(self._get_path(
+            'ANDROID_HOME')) / 'build-tools/30.0.3/aapt')
+        self.apktool_path = str(BASE_DIR / 'data/jar/apktool_2.5.0.jar')
+        self.apk_path = str(BASE_DIR / 'data/apk/Read.apk')
+
+    def _get_path(self, name):
+        """
+        整理到工具类
+        name: 环境变量名
+        """
+        result = os.environ.get(name, None)
+        # if not result:
+        #     try:
+        #         result = settings.name
+        #     except:
+        #         result = None
+        return result
 
     def process_unzip_apk(self, file_path):
         """使用apktool解压apk
@@ -21,13 +38,15 @@ class Process:
         """
 
         try:
-            
-            path = 'E:\\JoJo-Test\\mysite\\output\\%s' % 'Read'
-            print('java -jar E:\\JoJo-Test\\mysite\\data\jar\\apktool_2.5.0.jar d ' + file_path +' -o ' + str(path))
+            pattern = re.compile(r'.*[/\\](.*).apk$')
+            apk_name = re.match(pattern, self.apk_path).group(1)
+            out_path = str(BASE_DIR / ('output/%s' % apk_name))
+            print('java -jar E:\\JoJo-Test\\mysite\\data\jar\\apktool_2.5.0.jar d ' +
+                  file_path + ' -o ' + str(out_path))
             # path.mkdir(exist_ok=True)
-            p = subprocess.Popen(['java', '-jar' ,'E:\\JoJo-Test\\mysite\\data\jar\\apktool_2.5.0.jar','d' , file_path ,'-o' , str(path)],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-            output,err = p.communicate()
+            p = subprocess.Popen(['java', '-jar', self.apktool_path, 'd', file_path, '-o', str(out_path)],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+            output, err = p.communicate()
             logging.warning(err)
             logging.warning(output)
         except Exception as e:
@@ -35,14 +54,13 @@ class Process:
 
     def check_md5(self, file_path):
         """检查apkMD5值"""
-        with open(file_path,'rb') as f:
+        with open(file_path, 'rb') as f:
             data = f.read()
         file_md5 = hashlib.md5(data).hexdigest()
         return file_md5
 
-
     def get_apk_base_info(self):  # 获取apk包的基本信息
-        p = subprocess.Popen(self.aapt_path + " dump badging %s" % 'E:\\JoJo-Test\\mysite\\data\\apk\\Read.apk',
+        p = subprocess.Popen(self.aapt_path + " dump badging %s" % self.apk_path,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
         (output, err) = p.communicate()
         package_match = re.compile(
@@ -78,4 +96,4 @@ class Process:
 
 if __name__ == '__main__':
     p = Process()
-    print(p.process_unzip_apk(p.apk_path))
+    print(p.get_apk_base_info())
