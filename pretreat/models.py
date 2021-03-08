@@ -10,14 +10,14 @@ class AppBaseInfo(models.Model):
     apk_file = models.FileField(upload_to='uploads/%Y/%m/%d/')
     created = models.DateTimeField(auto_now_add=True)
     class Meta:
-        ordering = ('-created')
+        ordering = ('-created',)
     
     def __str__(self) -> str:
         return self.md5
 
 
 
-class AppMoreinfo(models.Model):
+class AppMoreInfo(models.Model):
     app = models.OneToOneField(AppBaseInfo,on_delete=models.CASCADE,primary_key=True)
     name = models.CharField("应用名",max_length=250)
     # file will be saved to MEDIA_ROOT/uploads/2015/01/30

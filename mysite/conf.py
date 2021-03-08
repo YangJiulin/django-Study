@@ -17,12 +17,12 @@ SIMPLEUI_CONFIG = {
         'models': [{
             'name': '文件上传反编译',
             'icon': 'far fa-surprise',
-            'url': 'pretreat/appinfo'
+            'url': 'pretreat/appbaseinfo'
             # 第三级菜单 ，
         }, {
             'name': '词法分析',
             'icon': 'fab fa-git',
-            'url': 'localhost:8000/pretreat/upload'
+            'url': 'pretreat/appmoreinfo'
         },
         {
             'name': '污点分析',
