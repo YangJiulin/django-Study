@@ -1,21 +1,19 @@
-from os import error
 import os
+import platform
 import subprocess
 from django.conf import settings
 from pathlib import Path
 import re
 import logging
 import hashlib
-BASE_DIR = Path(__file__).resolve().parent
 
 
 class Process:
 
     def __init__(self) -> None:
         self.aapt_path = str(Path(self._get_path(
-            'ANDROID_HOME')) / 'build-tools/30.0.3/aapt')
-        self.apktool_path = str(BASE_DIR / 'data/jar/apktool_2.5.0.jar')
-        self.apk_path = str(BASE_DIR / 'data/apk/Read.apk')
+            'ANDROID_HOME')) / 'build-tools/30.0.3/aapt.exe' if platform.system()=='Windows' else 'build-tools/30.0.3/aapt')
+        self.apktool_path = str(settings.BASE_DIR / 'data/jar/apktool_2.5.0.jar')
 
     def _get_path(self, name):
         """
@@ -39,8 +37,8 @@ class Process:
 
         try:
             pattern = re.compile(r'.*[/\\](.*).apk$')
-            apk_name = re.match(pattern, self.apk_path).group(1)
-            out_path = str(BASE_DIR / ('output/%s' % apk_name))
+            apk_name = re.match(pattern, file_path).group(1)
+            out_path = str(settings.BASE_DIR / ('output/%s' % apk_name))
             print('java -jar E:\\JoJo-Test\\mysite\\data\jar\\apktool_2.5.0.jar d ' +
                   file_path + ' -o ' + str(out_path))
             # path.mkdir(exist_ok=True)
@@ -52,15 +50,19 @@ class Process:
         except Exception as e:
             print(e)
 
-    def check_md5(self, file_path):
+    def get_md5(self, file):
         """检查apkMD5值"""
-        with open(file_path, 'rb') as f:
-            data = f.read()
-        file_md5 = hashlib.md5(data).hexdigest()
+        d5 = hashlib.md5()
+        for chunk in file.chunks():
+            d5.update(chunk)
+        file_md5 = d5.hexdigest()
+        # with open(file, 'rb') as f:
+        #     data = f.read()
+        # file_md5 = hashlib.md5(data).hexdigest()
         return file_md5
 
-    def get_apk_base_info(self):  # 获取apk包的基本信息
-        p = subprocess.Popen(self.aapt_path + " dump badging %s" % self.apk_path,
+    def get_apk_base_info(self,apk_path):  # 获取apk包的基本信息
+        p = subprocess.Popen(self.aapt_path + " dump badging %s" % apk_path,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
         (output, err) = p.communicate()
         package_match = re.compile(
